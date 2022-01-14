@@ -12,10 +12,10 @@ pub fn predict(
     f: &Matrix,
     u: &Vector,
     b: &Matrix,
-    q: &Matrix,
+    q: &Vector,
 ) -> Belief {
     let x_hat_prime = f.dot(x_hat) + b.dot(u);
-    let p_hat_prime = f.dot(p_hat).dot(&f.t()) + q;
+    let p_hat_prime = f.dot(p_hat).dot(&f.t()) + Matrix::from_diag(q);
     (x_hat_prime, p_hat_prime)
 }
 
@@ -39,11 +39,17 @@ pub fn draw(k: usize, world: &World, x: &Vector, p: &Matrix, u: &Vector) {
         for i in 0..world.ncols() {
             if x[0].round() as usize == i && x[1].round() as usize == j {
                 print!("⊕");
-            } else if inside_ellipse(&array![i as f32, j as f32], &x, &p.diag().slice(s![0..=1])) {
-                print!("·");
-            } else {
-                print!(" ");
+                continue;
             }
+            if world[[j, i]] > 0 {
+                print!("●");
+                continue;
+            }
+            if inside_ellipse(&array![i as f32, j as f32], &x, &p.diag().slice(s![0..=1])) {
+                print!("·");
+                continue;
+            }
+            print!(" ");
         }
         println!("│");
     }
