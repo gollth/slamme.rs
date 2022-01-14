@@ -1,17 +1,22 @@
 use ndarray::prelude::*;
 
-pub type State = Array2<u8>;
+pub type State = Array1<f32>;
+pub type World = Array2<u8>;
 
-pub fn draw(world: &State) {
+pub fn draw(world: &World, x: &State) {
     print!("┌");
     for _ in 0..world.ncols() {
         print!("─");
     }
     println!("┐");
-    for _y in world.rows() {
+    for j in 0..world.nrows() {
         print!("│");
-        for _x in world.columns() {
-            print!("·");
+        for i in 0..world.ncols() {
+            if x[0].round() as usize == i && x[1].round() as usize == j {
+                print!("⊕");
+            } else {
+                print!("·");
+            }
         }
         println!("│");
     }
