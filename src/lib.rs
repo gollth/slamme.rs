@@ -25,12 +25,10 @@ fn inside_ellipse(point: &Vector, center: &Vector, axes: &ArrayView1<f32>) -> bo
         <= 1.
 }
 
-pub fn print(x_hat: &Vector, p_hat: &Matrix, u: &Vector) {
-    println!("x̂: {}", x_hat);
-    println!("P̂: {}", p_hat.diag().slice(s![0..]));
-    println!("û: {}", u);
-}
-pub fn draw(world: &World, x: &Vector, p: &Matrix) {
+pub fn draw(k: usize, world: &World, x: &Vector, p: &Matrix, u: &Vector) {
+    print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
+
+    println!(" Step {}:", k);
     print!("┌");
     for _ in 0..world.ncols() {
         print!("─");
@@ -54,4 +52,9 @@ pub fn draw(world: &World, x: &Vector, p: &Matrix) {
         print!("─");
     }
     println!("┘");
+
+    // diagnostics
+    println!("x̂: {}", x);
+    println!("P̂: {}", p.diag().slice(s![0..]));
+    println!("û: {}", u);
 }

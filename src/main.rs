@@ -1,5 +1,7 @@
 use ndarray::prelude::*;
-use slammers::{draw, predict, print};
+use slammers::{draw, predict};
+use std::io::stdin;
+use termion::input::TermRead;
 
 fn main() {
     // initial state
@@ -32,20 +34,10 @@ fn main() {
 
     let mut belief = (x0, p0);
 
-    println!("Step 0:");
-    draw(&board, &belief.0, &belief.1);
-    print(&belief.0, &belief.1, &u);
-    println!("------------------------");
+    loop {
+        draw(0, &board, &belief.0, &belief.1, &u);
+        stdin().keys().next();
 
-    println!("Step 1:");
-    belief = predict(&belief.0, &belief.1, &f, &u, &b, &q);
-    draw(&board, &belief.0, &belief.1);
-    print(&belief.0, &belief.1, &u);
-    println!("------------------------");
-
-    println!("Step 2:");
-    belief = predict(&belief.0, &belief.1, &f, &u, &b, &q);
-    draw(&board, &belief.0, &belief.1);
-    print(&belief.0, &belief.1, &u);
-    println!("------------------------");
+        belief = predict(&belief.0, &belief.1, &f, &u, &b, &q);
+    }
 }
