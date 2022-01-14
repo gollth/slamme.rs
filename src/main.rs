@@ -1,7 +1,10 @@
 use ndarray::{concatenate, prelude::*};
-use slammers::{draw, predict, Matrix, Vector};
+use slammers::{draw, measure, predict, update, Matrix, Vector};
 use std::io::stdin;
 use termion::input::TermRead;
+
+const NOISE_OBSERVATION_SIGMA: f32 = 0.01;
+const NOISE_PROCESS_SIGMA: f32 = 0.05;
 
 fn main() {
     const K: usize = 3; // number of landmarks
@@ -34,7 +37,7 @@ fn main() {
         concatenate![Axis(1), prr0, Matrix::zeros((4, N))],
         concatenate![Axis(1), Matrix::zeros((N, 4)), Matrix::zeros((N, N))]
     ];
-    println!("P: {}", p0);
+    println!("P: {:?}", p0.dim());
 
     // Dynamics Model
     let f = concatenate![
@@ -51,30 +54,30 @@ fn main() {
         ],
         concatenate![Axis(1), Matrix::zeros((N, 4)), Matrix::eye(N)],
     ];
-    println!("F: {}", f);
+    println!("F: {:?}", f.dim());
+
+    // process noise
+    let w = NOISE_PROCESS_SIGMA * Vector::ones(4 + N);
+    println!("w: {}", w);
 
     // How do control inputs apply to state?
     let b = concatenate![
         Axis(0),
-        array![[1., 0.], [0., 1.], [0., 0.], [0., 0.],],
-        Matrix::zeros((N, 2)),
+        array![[1., 0.], [0., 1.], [0., 0.], [0., 0.],], // robot is moved on position level
+        Matrix::zeros((N, 2)),                           // landmarks aren't affected by controls
     ];
-    println!("B: {}", b);
+    println!("B: {:?}", b.dim());
 
     // Observation Model
-    // TODO
-
-    // observation noise
-    // TODO
-    // let v = array![[1., 0., 0., 0.], [0., 1., 0., 0.]];
-
-    // process noise
-    let w = concatenate![
+    let h = concatenate![
         Axis(0),
-        array![0.01, 0.01, 0.01, 0.01], // robot state
-        0.01 * Vector::ones(N),         // landmarks
+        Matrix::zeros((4, N + 4)),
+        concatenate![Axis(1), Matrix::zeros((N, 4)), Matrix::eye(N)]
     ];
-    println!("w: {}", w);
+    println!("H: {:?}", h.dim());
+
+    // Observation noise
+    let v = NOISE_OBSERVATION_SIGMA * Vector::ones(4 + N);
 
     // Add some obstacles to the world
     let mut world = Array2::zeros((16, 32));
@@ -85,8 +88,6 @@ fn main() {
         );
         world[coord] = 1;
     }
-    world[[10, 2]] = 2;
-    world[[11, 11]] = 2;
 
     let u = array![1., 0.]; // Control inputs
 
@@ -97,5 +98,11 @@ fn main() {
         stdin().keys().next();
 
         belief = predict(&belief.0, &belief.1, &f, &u, &b, &w);
+        draw(0, &world, &belief.0, &belief.1, &u);
+        stdin().keys().next();
+
+        let z = measure(&world, &belief.0);
+        belief = update(&z, &h, &belief.0, &belief.1, &v);
+        stdin().keys().next();
     }
 }
